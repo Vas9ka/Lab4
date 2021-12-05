@@ -5,6 +5,10 @@ from csv import reader
 from csv import writer
 import urllib.request
 
+import pandas as pd
+import tensorflow as tf
+import matplotlib.pyplot as plt
+
 
 def download_data(url_dictionary):
     # Lets download the files
@@ -46,3 +50,42 @@ def sum_cases_province(input_file, output_file):
                 else:
                     csv_writer.writerow(lines[i])
             i += 1
+
+
+def split_sequence(sequence, look_back, forecast_horizon):
+    X, y = list(), list()
+    for i in range(len(sequence)):
+        lag_end = i + look_back
+        forecast_end = lag_end + forecast_horizon
+        if forecast_end > len(sequence):
+            break
+        seq_x, seq_y = sequence[i:lag_end], sequence[lag_end:forecast_end]
+        X.append(seq_x)
+        y.append(seq_y)
+    return np.array(X), np.array(y)
+
+
+def inverse_transform(y_test, yhat):
+    y_test_reshaped = y_test.reshape(-1, y_test.shape[-1])
+    yhat_reshaped = yhat.reshape(-1, yhat.shape[-1])
+    return yhat_reshaped, y_test_reshaped
+
+
+def plot_results(pred_data, real_data):
+    fig, ax = plt.subplots(len(pred_data.columns), 1, figsize=(10, 10))
+    for i in range(len(ax)):
+        ax[i].plot(pred_data[pred_data.columns[i]], label='predicted')
+        ax[i].plot(real_data[pred_data.columns[i]].values[-(len(pred_data)):], label='real')
+        ax[i].legend(loc='upper right')
+        ax[i].set_ylabel(pred_data.columns[i])
+    plt.show()
+
+
+def reformat_data(recovered, confirmed, deaths):
+    data = pd.DataFrame(data={'confirmed': confirmed.values.T.reshape(-1),
+                              'recovered': recovered.values.T.reshape(-1),
+                              'deaths': deaths.values.T.reshape(-1)},
+                        index=confirmed.columns,
+                        #columns=['confirmed', 'recovered', 'deaths']
+                        )
+    return data
