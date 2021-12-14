@@ -32,6 +32,30 @@ optimal = minimize(loss, [0.001, 0.001], args=(self.data, self.recovered, self.s
         
 ```
 
+```sh
+def loss(point, data, recovered, s_0, i_0, r_0):
+    size = len(data)
+    beta, gamma = point
+
+    def SIR(y, t):
+        S = y[0]
+        I = y[1]
+        R = y[2]
+        y0 = -beta * S * I
+        y1 = beta * S * I - gamma * I
+        y2 = gamma * I
+        return [y0, y1, y2]
+
+    y0=[s_0,i_0,r_0]
+    tspan=np.arange(0, size, 1)
+    res=odeint(SIR,y0,tspan)
+    l1 = np.sqrt(np.mean((res[:,1] - data)**2))
+    l2 = np.sqrt(np.mean((res[:,2] - recovered)**2))
+
+    alpha = 0.1
+    return alpha * l1 + (1 - alpha) * l2
+```
+
 ## Предсказание
 Направление изменения числа больных определяется базовым <a href="https://ru.wikipedia.org/wiki/Индекс_репродукции">индексом репродукции</a>  
 ![](https://latex.codecogs.com/svg.latex?\Large&space;p_0=\frac{\beta}{\gamma})
